@@ -1,0 +1,62 @@
+# Copyright 2026 CNM Ingenuity, Inc. All rights reserved.
+name: "Build and deploy GitHub Pages site"
+
+on:
+
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+    paths:
+      - '.github/**'
+      - 'docs/**'
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+
+  build:
+    name: "Use Jekyll to generate HTML content"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+
+      - name: Checkout docs branch
+        uses: actions/checkout@v7
+
+      - name: Setup GitHub Pages workflow
+        uses: actions/configure-pages@v6
+
+      - name: Generate site with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v5
+
+  deploy:
+    name: Deploy generated site
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    timeout-minutes: 5
+
+    steps:
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
