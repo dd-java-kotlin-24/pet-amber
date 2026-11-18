@@ -1,6 +1,4 @@
-# Android + Spring Boot Project Template
-
-[//]: # (TODO Update title.  )
+# PetAmber
 
 ## Summary
 
