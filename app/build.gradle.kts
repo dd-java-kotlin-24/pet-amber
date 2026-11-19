@@ -193,9 +193,9 @@ dependencies {
 }
 
 roomDdl {
-    // TODO Change source location to match local database.
-    source = project.file("$projectDir/schemas/edu.cnm.deepdive.myproject.app.database.LocalDatabase/1.json")
-    destination = project.file("$projectDir/../docs/sql/ddl.sql")
+
+    source = project.file("schemas/edu.cnm.deepdive.petamber.app.database.PetAmberDatabase/1.json")
+    destination = project.file("../docs/sql/ddl.sql")
 }
 
 fun getLocalProperty(name: String): String =
