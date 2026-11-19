@@ -1,16 +1,10 @@
-name: Check Formating
-
-on: [ push, pull_request ]
-
+name: checkstyle
+on: [pull_request]
 jobs:
-
-  formatting:
+  checkstyle:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4 # v2 minimum required
-      - uses: axel-op/googlejavaformat-action@v4
+      - uses: actions/checkout@v7
+      - uses: dbelyaev/action-checkstyle@v4
         with:
-          args: "--replace"
-          skip-commit: true
-      - name: Print diffs
-        run: git --no-pager diff --exit-code
+          github_token: ${{ secrets.GITHUB_TOKEN }}
