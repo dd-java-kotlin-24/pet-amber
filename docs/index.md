@@ -75,3 +75,87 @@ The following enhancements represent organic extensions to the core architecture
 2. **Radius-Based Proximity Push Notifications:** Utilize Firebase Cloud Messaging (FCM) to broadcast push notifications to users whose saved home radius or current location falls within 2–3 miles of a newly initiated Pet Amber alert.
 3. **Emergency Foster & Microchip Scanner Directory:** Allow community members to register special volunteer capabilities on their profile (e.g., holding a universal microchip scanner or offering temporary overnight foster care for animals found outside shelter hours).
 4. **Real-Time Map Synchronization:** Integrate WebSocket or Server-Sent Events (SSE) to update the breadcrumb map and sighting count live on connected devices as new sightings are confirmed by the search squad.
+
+## Database Entity-Relationship Diagram (ERD) & DDL
+
+* [**Pet Amber Server ERD Specification (PDF)**](pdf/Pet_Amber_Server_ERD_Specification.pdf) — Complete 2-page specification covering relational schema matrices, multiplicity, 3NF multi-user cascade behaviors, and data dictionary.
+* [**Executable PostgreSQL DDL Script**](sql/ddl.sql) — Clean executable database definition statements with check constraints, foreign keys, and indices.
+* [**Visual Vector Diagram (SVG)**](img/erd.svg) | [**High-Resolution Diagram (PNG)**](img/erd.png)
+
+### Visual Schema (Crow's Foot Notation)
+
+![Pet Amber Server ERD](img/erd.svg)
+
+### Mermaid ERD Source Code
+
+```mermaid
+erDiagram
+  USER_PROFILE ||--o{ PET_REPORT : "owns (1 : 0..*)"
+  USER_PROFILE ||--o{ SQUAD_MEMBERSHIP : "joins (1 : 0..*)"
+  PET_REPORT ||--o{ SQUAD_MEMBERSHIP : "mobilizes (1 : 0..*)"
+  PET_REPORT ||--o{ SIGHTING : "tracks (1 : 0..*)"
+  USER_PROFILE ||--o{ SIGHTING : "spots (1 : 0..*)"
+  SIGHTING ||--o{ CORROBORATION : "verifies (1 : 0..*)"
+  USER_PROFILE ||--o{ CORROBORATION : "confirms (1 : 0..*)"
+
+  USER_PROFILE {
+    BIGINT user_profile_id PK "IDENTITY"
+    UUID external_key UQ1 "NOT NULL, UNIQUE"
+    VARCHAR oauth_key UQ2 "Google sub NOT NULL, UNIQUE"
+    VARCHAR display_name "NOT NULL"
+    VARCHAR email UQ3 "NOT NULL, UNIQUE"
+    VARCHAR avatar_url "NULL"
+    VARCHAR phone_number "NULL"
+    TIMESTAMPTZ created "NOT NULL DEFAULT CURRENT_TIMESTAMP"
+  }
+  PET_REPORT {
+    BIGINT pet_report_id PK "IDENTITY"
+    UUID external_key UQ1 "NOT NULL, UNIQUE"
+    BIGINT owner_id FK1 "REFERENCES user_profile (CASCADE)"
+    VARCHAR pet_name "NOT NULL"
+    VARCHAR species "NOT NULL"
+    VARCHAR breed "NULL"
+    VARCHAR color_markings "NOT NULL"
+    VARCHAR collar_description "NULL"
+    BOOLEAN is_microchipped "NOT NULL DEFAULT FALSE"
+    VARCHAR photo_url "NULL (Cloud Storage Image)"
+    TIMESTAMPTZ last_seen_timestamp "NOT NULL"
+    DOUBLE_PRECISION last_seen_latitude "NOT NULL"
+    DOUBLE_PRECISION last_seen_longitude "NOT NULL"
+    VARCHAR last_seen_address "NULL"
+    VARCHAR status "NOT NULL (ACTIVE_SEARCH | REUNITED | CLOSED)"
+    TEXT resolution_notes "NULL"
+    TIMESTAMPTZ created "NOT NULL"
+    TIMESTAMPTZ updated "NOT NULL"
+  }
+  SQUAD_MEMBERSHIP {
+    BIGINT squad_membership_id PK "IDENTITY"
+    BIGINT user_id FK1 "REFERENCES user_profile (CASCADE, UQ1)"
+    BIGINT pet_report_id FK2 "REFERENCES pet_report (CASCADE, UQ1)"
+    TIMESTAMPTZ joined "NOT NULL DEFAULT CURRENT_TIMESTAMP"
+    BOOLEAN is_active "NOT NULL DEFAULT TRUE"
+  }
+  SIGHTING {
+    BIGINT sighting_id PK "IDENTITY"
+    UUID external_key UQ1 "NOT NULL, UNIQUE"
+    BIGINT pet_report_id FK1 "REFERENCES pet_report (CASCADE)"
+    BIGINT spotter_id FK2 "REFERENCES user_profile (RESTRICT)"
+    VARCHAR photo_url "NULL (Evidence Image)"
+    TIMESTAMPTZ sighting_timestamp "NOT NULL"
+    DOUBLE_PRECISION latitude "NOT NULL"
+    DOUBLE_PRECISION longitude "NOT NULL"
+    VARCHAR location_description "NULL"
+    VARCHAR direction "Enum: NORTH..STATIONARY"
+    VARCHAR direction_notes "Free-form text"
+    TEXT notes "NULL"
+    TIMESTAMPTZ created "NOT NULL"
+  }
+  CORROBORATION {
+    BIGINT corroboration_id PK "IDENTITY"
+    BIGINT sighting_id FK1 "REFERENCES sighting (CASCADE, UQ1)"
+    BIGINT user_id FK2 "REFERENCES user_profile (CASCADE, UQ1)"
+    BOOLEAN is_confirmed "NOT NULL DEFAULT TRUE"
+    VARCHAR corroboration_notes "NULL"
+    TIMESTAMPTZ created "NOT NULL"
+  }
+```
